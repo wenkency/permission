@@ -12,7 +12,7 @@ allprojects {
 	}
 
 
-implementation 'com.github.wenkency:permistion:1.0.0'
+implementation 'com.github.wenkency:permission:1.0.0'
 
 ```
 
