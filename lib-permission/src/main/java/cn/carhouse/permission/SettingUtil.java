@@ -1,29 +1,25 @@
-package cn.carhouse.permission.setting;
+package cn.carhouse.permission;
 
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.provider.Settings;
 
+import androidx.annotation.NonNull;
+
 /**
- * Created by mq on 2018/3/8 下午3:50
- * mqcoder90@gmail.com
+ * 打开应用设置页面
  */
 
-public class Default implements ISetting {
-
-    private Context context;
-
-    public Default(Context context) {
-        this.context = context;
-    }
-
-    @Override
-    public Intent getSetting() {
+public class SettingUtil {
+    /**
+     * 跳设置界面
+     */
+    public static void openSetting(@NonNull Context context) {
         Intent intent = new Intent();
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
         intent.setData(Uri.fromParts("package", context.getPackageName(), null));
-        return intent;
+        context.startActivity(intent);
     }
 }

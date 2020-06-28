@@ -1,7 +1,7 @@
 apply plugin: 'com.android.library'
 // 远程仓库
 apply plugin: 'com.github.dcendents.android-maven'
-group='com.github.wenkency'
+group = 'com.github.wenkency'
 def app = rootProject.ext.app
 def depsVersion = rootProject.ext.depsVersion
 android {
@@ -24,7 +24,5 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-
-    implementation "androidx.appcompat:appcompat:${depsVersion.appcompat}"
-
+    compileOnly "androidx.appcompat:appcompat:${depsVersion.appcompat}"
 }

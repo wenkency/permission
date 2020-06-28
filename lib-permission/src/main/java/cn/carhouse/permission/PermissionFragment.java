@@ -4,6 +4,8 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Fragment;
+import android.app.FragmentManager;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Build;
 import android.os.Bundle;
@@ -16,7 +18,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
-import cn.carhouse.permission.setting.SettingUtil;
+import java.util.HashMap;
+import java.util.Map;
+
+import cn.carhouse.permission.callback.PermissionListener;
 
 
 /**
@@ -25,36 +30,29 @@ import cn.carhouse.permission.setting.SettingUtil;
 
 @SuppressLint("ValidFragment")
 public class PermissionFragment extends Fragment {
-    /**
-     * 请求码
-     */
-    private static final int CODE = 66;
-    /**
-     * 回调
-     */
-    private PermissionListener mPermissionListener;
-
-    private Activity mActivity;
+    private static final String TAG = PermissionFragment.class.getSimpleName();
     /**
      * 拒绝权限后是否显示设置的Dialog
      */
     private boolean isShowSetting = true;
-    private Handler mHandler = new Handler(Looper.getMainLooper());
 
+    private Activity mActivity;
+
+    private Handler mHandler = new Handler(Looper.getMainLooper());
+    private Map<Integer, PermissionInfo> listeners = new HashMap<>(2);
+    private static final int REQUEST_CODE = 111;
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        mActivity = getActivity();
+    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
     }
-
-    /**
-     * 设置成功回调的监听
-     */
-    public void setPermissionListener(PermissionListener permissionListener) {
-        mPermissionListener = permissionListener;
-    }
-
 
     /**
      * 显示Toast
@@ -85,7 +83,7 @@ public class PermissionFragment extends Fragment {
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.dismiss();
                         // 打开应用设置页面
-                        SettingUtil.go2Setting(mActivity);
+                        SettingUtil.openSetting(mActivity);
                     }
                 })
                 .setNegativeButton("取消", new DialogInterface.OnClickListener() {
@@ -101,15 +99,16 @@ public class PermissionFragment extends Fragment {
      * 申请权限
      */
     @SuppressLint("NewApi")
-    public void requestPermissions(Activity activity, String[] permissions) {
-        this.mActivity = activity;
+    public void requestPermissions(PermissionListener permissionListener, String[] permissions) {
         // 所有的权限都同意了
-        if (PermissionUtil.hasSelfPermissions(activity, permissions)) {
+        if (PermissionUtil.hasSelfPermissions(mActivity, permissions)) {
             // 执行成功的方法
-            onSucceed();
+            onSucceed(permissionListener);
         } else {
+            PermissionInfo info = new PermissionInfo(permissionListener, permissions);
+            listeners.put(info.requestCode, info);
             // 申请权限
-            requestPermissions(permissions, CODE);
+            requestPermissions(permissions, info.requestCode);
         }
     }
 
@@ -120,35 +119,35 @@ public class PermissionFragment extends Fragment {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        // 请求码不对就return
-        if (requestCode != CODE) {
+        // 申请权限，没有回调的
+        if (requestCode == REQUEST_CODE) {
             return;
         }
-        //所有权限都同意
-        if (PermissionUtil.verifyPermissions(grantResults)) {
+        // 请求码不对的
+        PermissionInfo info = listeners.get(requestCode);
+        if (info == null) {
+            return;
+        }
+        // 所有权限都同意
+        if (PermissionUtil.hasSelfPermissions(mActivity, info.permissions)) {
             // 执行成功的方法
-            onSucceed();
+            onSucceed(info.permissionListener);
         } else {
             // 找到第一个不同意的权限
-            String refusePermission = PermissionUtil.getRefusePermission(mActivity, permissions);
-            if (!PermissionUtil.shouldShowRequestPermissionRationale(mActivity, permissions)) {
-                // 权限被拒绝并且选中不再提示
-                if (permissions.length != grantResults.length) {
-                    showToast(refusePermission, "权限被拒绝");
-                    onFailed(false);
-                    return;
-                }
+            String refusePermission = PermissionUtil.getRefusePermission(mActivity, info.permissions);
+            // 权限被拒绝并且选中不再提示
+            if (!PermissionUtil.shouldShowRequestPermissionRationale(mActivity, info.permissions)) {
+                showToast(refusePermission, "权限被拒绝");
                 // 显示Dialog，让用户去设置打开
                 if (isShowSetting) {
                     showDialog(refusePermission);
                 }
-                onFailed(true);
+                onFailed(info.permissionListener, true);
             } else {
-                //权限被取消
+                // 权限被拒绝
                 showToast(refusePermission, "权限被拒绝");
-                onFailed(false);
+                onFailed(info.permissionListener, false);
             }
-
         }
 
     }
@@ -156,42 +155,60 @@ public class PermissionFragment extends Fragment {
     /**
      * 成功回调
      */
-    public void onSucceed() {
-
-        if (mPermissionListener != null) {
-            mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    mPermissionListener.onSucceed();
-                    mPermissionListener.onAfter();
-                }
-            });
-
-        }
+    public void onSucceed(final PermissionListener permissionListener) {
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                permissionListener.onSucceed();
+                permissionListener.onAfter();
+            }
+        });
     }
 
-    public void onFailed(final boolean isCue) {
-        if (mPermissionListener != null) {
-            mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    mPermissionListener.onFailed(isCue);
-                    mPermissionListener.onAfter();
-                }
-            });
-        }
+    public void onFailed(final PermissionListener permissionListener, final boolean isCue) {
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                permissionListener.onFailed(isCue);
+                permissionListener.onAfter();
+            }
+        });
     }
 
 
     @Override
     public void onDestroy() {
         mActivity = null;
-        mPermissionListener = null;
         super.onDestroy();
     }
 
 
     public void setShowSetting(boolean isShowSetting) {
         this.isShowSetting = isShowSetting;
+    }
+
+
+    /**
+     * 获取PermissionsFragment
+     */
+    public static PermissionFragment getPermissionsFragment(Activity activity) {
+        PermissionFragment permissionsFragment = findPermissionsFragment(activity);
+        if (permissionsFragment == null) {
+            permissionsFragment = new PermissionFragment();
+            FragmentManager fragmentManager = activity.getFragmentManager();
+            fragmentManager
+                    .beginTransaction()
+                    .add(permissionsFragment, TAG)
+                    .commitAllowingStateLoss();
+            fragmentManager.executePendingTransactions();
+        }
+        return permissionsFragment;
+    }
+
+    /**
+     * 查找PermissionsFragment
+     */
+    public static PermissionFragment findPermissionsFragment(Activity activity) {
+        return (PermissionFragment) activity.getFragmentManager().findFragmentByTag(TAG);
     }
 }

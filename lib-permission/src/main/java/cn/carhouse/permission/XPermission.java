@@ -2,10 +2,12 @@ package cn.carhouse.permission;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.FragmentManager;
-
 
 import java.util.List;
+
+import cn.carhouse.permission.callback.PermissionLifecycleCallbacks;
+import cn.carhouse.permission.callback.PermissionListener;
+import cn.carhouse.permission.callback.PermissionListenerAdapter;
 
 
 /**
@@ -13,67 +15,21 @@ import java.util.List;
  */
 
 public class XPermission {
+
     private PermissionFragment mPermissionFragment;// 申请权限的中间Fragment
     private String[] mPermissions;
-    private static final String TAG = "XPermission";
     private Activity mActivity;
     // 拒绝权限后是否显示设置的Dialog
     private boolean isShowSetting = true;
 
     public XPermission(Activity activity) {
         this.mActivity = activity;
-        this.mPermissionFragment = getPermissionsFragment(activity);
-        if (mActivity != null) {
-            mActivity.getApplication().registerActivityLifecycleCallbacks(new LifecycleCallbacks() {
-                @Override
-                public void onActivityDestroyed(Activity activity) {
-                    try {
-                        if (mActivity != null && activity == mActivity) {
-                            mActivity.getApplication().unregisterActivityLifecycleCallbacks(this);
-                            PermissionFragment fragment = findPermissionsFragment(mActivity);
-                            if (fragment != null) {
-                                FragmentManager fragmentManager = mActivity.getFragmentManager();
-                                fragmentManager
-                                        .beginTransaction()
-                                        .remove(fragment)
-                                        .commitAllowingStateLoss();
-                                fragmentManager.executePendingTransactions();
-                            }
-                            mPermissionFragment = null;
-                            mActivity = null;
-                        }
-                    } catch (Throwable e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
-        }
+        this.mPermissionFragment = PermissionFragment.getPermissionsFragment(activity);
+        PermissionLifecycleCallbacks.register(activity);
     }
 
     public static XPermission with(Activity activity) {
         return new XPermission(activity);
-    }
-
-    private PermissionFragment getPermissionsFragment(Activity activity) {
-        PermissionFragment permissionsFragment = findPermissionsFragment(activity);
-        boolean isNewInstance = permissionsFragment == null;
-        if (isNewInstance) {
-            permissionsFragment = new PermissionFragment();
-            FragmentManager fragmentManager = activity.getFragmentManager();
-            fragmentManager
-                    .beginTransaction()
-                    .add(permissionsFragment, TAG)
-                    .commitAllowingStateLoss();
-            fragmentManager.executePendingTransactions();
-        }
-        return permissionsFragment;
-    }
-
-    /**
-     * 去找权限的Fragment
-     */
-    private PermissionFragment findPermissionsFragment(Activity activity) {
-        return (PermissionFragment) activity.getFragmentManager().findFragmentByTag(TAG);
     }
 
 
@@ -98,23 +54,25 @@ public class XPermission {
      */
     @SuppressLint("NewApi")
     public void request(PermissionListener permissionListener) {
-        mPermissionFragment.setPermissionListener(permissionListener);
+        // 如果是空，就默认回调
+        if (permissionListener == null) {
+            permissionListener = new PermissionListenerAdapter();
+        }
         // 1.判断一下是不是6.0以上的系统
-        if (!PermissionUtils.isUpAndroidM()) {
+        if (!PermissionUtil.isUpAndroidM()) {
             // 执行成功的方法
-            mPermissionFragment.onSucceed();
+            mPermissionFragment.onSucceed(permissionListener);
             return;
         }
         // 2.获取未申请的权限列表
-        List<String> deniedPermissions = PermissionUtils.getDeniedPermissions(mActivity, mPermissions);
+        List<String> deniedPermissions = PermissionUtil.getDeniedPermissions(mActivity, mPermissions);
         if (deniedPermissions.size() > 0) {
             // 3.要去申请权限
             mPermissionFragment.setShowSetting(isShowSetting);
-            mPermissionFragment.requestPermissions(mActivity, deniedPermissions.toArray(new String[deniedPermissions.size()]));
+            mPermissionFragment.requestPermissions(permissionListener, deniedPermissions.toArray(new String[deniedPermissions.size()]));
         } else {
             // 执行成功的方法
-            mPermissionFragment.onSucceed();
-
+            mPermissionFragment.onSucceed(permissionListener);
         }
     }
 

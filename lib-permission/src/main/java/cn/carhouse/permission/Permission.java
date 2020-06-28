@@ -34,14 +34,18 @@ public class Permission {
             SMS = new String[]{};
             STORAGE = new String[]{};
         } else {
+
+
+            CAMERA = new String[]{
+                    Manifest.permission.CAMERA};
+
+            STORAGE = new String[]{
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE};
+
             CALENDAR = new String[]{
                     Manifest.permission.READ_CALENDAR,
                     Manifest.permission.WRITE_CALENDAR};
-
-            CAMERA = new String[]{
-                    Manifest.permission.READ_EXTERNAL_STORAGE,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                    Manifest.permission.CAMERA};
 
             CONTACTS = new String[]{
                     Manifest.permission.READ_CONTACTS,
@@ -69,9 +73,7 @@ public class Permission {
                     Manifest.permission.RECEIVE_WAP_PUSH,
                     Manifest.permission.RECEIVE_MMS};
 
-            STORAGE = new String[]{
-                    Manifest.permission.READ_EXTERNAL_STORAGE,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE};
+
         }
     }
 

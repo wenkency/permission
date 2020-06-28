@@ -7,6 +7,10 @@ import android.os.Build;
 
 import androidx.collection.SimpleArrayMap;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by mq on 2018/3/6 上午11:40
@@ -110,5 +114,30 @@ public class PermissionUtil {
             }
         }
         return false;
+    }
+
+
+    /**
+     * 获取用户未授权的权限列表
+     */
+    public static List<String> getDeniedPermissions(Activity activity, String... permissions) {
+        List<String> list = new ArrayList<>();
+        if (permissions == null) {
+            return list;
+        }
+        for (String p : permissions) {
+            if (ActivityCompat.checkSelfPermission(activity, p) != PackageManager.PERMISSION_GRANTED) {
+                list.add(p);
+            }
+        }
+        return list;
+    }
+
+
+    /**
+     * 判断版本是不是大于6.0
+     */
+    public static boolean isUpAndroidM() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M;
     }
 }

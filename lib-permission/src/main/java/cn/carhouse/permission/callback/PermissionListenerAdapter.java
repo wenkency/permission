@@ -1,10 +1,10 @@
-package cn.carhouse.permission;
+package cn.carhouse.permission.callback;
 
 /**
  * 申请权限成功的回调
  */
 
-public abstract class PermissionListenerAdapter implements PermissionListener {
+public class PermissionListenerAdapter implements PermissionListener {
 
     @Override
     public void onSucceed() {

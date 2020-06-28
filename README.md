@@ -12,20 +12,27 @@ allprojects {
 	}
 
 
-implementation 'com.github.wenkency:permission:1.0.0'
+implementation 'com.github.wenkency:permission:1.1.0'
 
 ```
 
 ### 使用方式
 ```
- XPermission.with(this)
-                .permissions(Permission.STORAGE)
-                .request(new PermissionListenerAdapter() {
-                    @Override
-                    public void onSucceed() {
-                        Toast.makeText(MainActivity.this, "申请成功", Toast.LENGTH_SHORT).show();
-                    }
-                });
+XPermission.with(this)
+        .permissions(Permission.STORAGE)
+        .isShowSetting(false) // 不显示设置Dialog，默认拒绝后显示的
+        .request(new PermissionListenerAdapter() {
+            @Override
+            public void onSucceed() {
+                Log.e("TAG", "申请STORAGE成功");
+            }
+
+            @Override
+            public void onFailed(boolean isCue) {
+                super.onFailed(isCue);
+                Log.e("TAG", "Permission.STORAGE:" + isCue);
+            }
+        });
 ```
 
 ### 运行结果
