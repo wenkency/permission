@@ -120,7 +120,7 @@ public class PermissionFragment extends Fragment {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         // 请求码不对的
-        PermissionInfo info = listeners.get(requestCode);
+        PermissionInfo info = listeners.remove(requestCode);
         if (info == null) {
             return;
         }
@@ -175,6 +175,7 @@ public class PermissionFragment extends Fragment {
     @Override
     public void onDestroy() {
         mActivity = null;
+        listeners.clear();
         super.onDestroy();
     }
 
