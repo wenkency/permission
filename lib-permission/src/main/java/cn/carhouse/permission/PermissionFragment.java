@@ -34,13 +34,11 @@ public class PermissionFragment extends Fragment {
     /**
      * 拒绝权限后是否显示设置的Dialog
      */
-    private boolean isShowSetting = true;
-
+    private boolean isShowSetting;
+    private boolean isShowToast;
     private Activity mActivity;
-
     private Handler mHandler = new Handler(Looper.getMainLooper());
     private Map<Integer, PermissionInfo> listeners = new HashMap<>(2);
-    private static final int REQUEST_CODE = 111;
 
     @Override
     public void onAttach(Context context) {
@@ -57,7 +55,10 @@ public class PermissionFragment extends Fragment {
     /**
      * 显示Toast
      */
-    private void showToast(String refusePermission, String text) {
+    private void showToast(PermissionInfo info, String refusePermission, String text) {
+        if (!info.isShowToast) {
+            return;
+        }
         if (!TextUtils.isEmpty(refusePermission)) {
             text = refusePermission + text;
         }
@@ -68,9 +69,6 @@ public class PermissionFragment extends Fragment {
      * 显示设置的Dialog
      */
     private void showDialog(String msg) {
-        if (!isShowSetting) {
-            return;
-        }
         String text = "请在设置中开启权限，以正常使用应用功能。";
         if (!TextUtils.isEmpty(msg)) {
             text = "请在设置中开启" + msg + "权限，以正常使用应用功能。";
@@ -106,6 +104,8 @@ public class PermissionFragment extends Fragment {
             onSucceed(permissionListener);
         } else {
             PermissionInfo info = new PermissionInfo(permissionListener, permissions);
+            info.isShowSetting = isShowSetting;
+            info.isShowToast = isShowToast;
             listeners.put(info.requestCode, info);
             // 申请权限
             requestPermissions(permissions, info.requestCode);
@@ -119,10 +119,6 @@ public class PermissionFragment extends Fragment {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        // 申请权限，没有回调的
-        if (requestCode == REQUEST_CODE) {
-            return;
-        }
         // 请求码不对的
         PermissionInfo info = listeners.get(requestCode);
         if (info == null) {
@@ -137,15 +133,15 @@ public class PermissionFragment extends Fragment {
             String refusePermission = PermissionUtil.getRefusePermission(mActivity, info.permissions);
             // 权限被拒绝并且选中不再提示
             if (!PermissionUtil.shouldShowRequestPermissionRationale(mActivity, info.permissions)) {
-                showToast(refusePermission, "权限被拒绝");
+                showToast(info, refusePermission, "权限被拒绝");
                 // 显示Dialog，让用户去设置打开
-                if (isShowSetting) {
+                if (info.isShowSetting) {
                     showDialog(refusePermission);
                 }
                 onFailed(info.permissionListener, true);
             } else {
                 // 权限被拒绝
-                showToast(refusePermission, "权限被拒绝");
+                showToast(info, refusePermission, "权限被拒绝");
                 onFailed(info.permissionListener, false);
             }
         }
@@ -187,6 +183,9 @@ public class PermissionFragment extends Fragment {
         this.isShowSetting = isShowSetting;
     }
 
+    public void setShowToast(boolean showToast) {
+        isShowToast = showToast;
+    }
 
     /**
      * 获取PermissionsFragment

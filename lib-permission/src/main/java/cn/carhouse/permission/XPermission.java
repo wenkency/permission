@@ -19,8 +19,10 @@ public class XPermission {
     private PermissionFragment mPermissionFragment;// 申请权限的中间Fragment
     private String[] mPermissions;
     private Activity mActivity;
-    // 拒绝权限后是否显示设置的Dialog
-    private boolean isShowSetting = true;
+    // 拒绝权限后是否显示设置的Dialog，默认不显示设置
+    private boolean isShowSetting = false;
+    // 权限拒绝弹提示吐司，默认弹
+    private boolean isShowToast = true;
 
     public XPermission(Activity activity) {
         this.mActivity = activity;
@@ -44,8 +46,16 @@ public class XPermission {
     /**
      * 拒绝权限后是否显示设置的Dialog
      */
-    public XPermission isShowSetting(boolean isShowSetting) {
+    public XPermission showSetting(boolean isShowSetting) {
         this.isShowSetting = isShowSetting;
+        return this;
+    }
+
+    /**
+     * 拒绝权限后是否显示弹吐司
+     */
+    public XPermission showToast(boolean isShowToast) {
+        this.isShowToast = isShowToast;
         return this;
     }
 
@@ -67,9 +77,13 @@ public class XPermission {
         // 2.获取未申请的权限列表
         List<String> deniedPermissions = PermissionUtil.getDeniedPermissions(mActivity, mPermissions);
         if (deniedPermissions.size() > 0) {
-            // 3.要去申请权限
+            // 设置吐司和打开设置页面
             mPermissionFragment.setShowSetting(isShowSetting);
-            mPermissionFragment.requestPermissions(permissionListener, deniedPermissions.toArray(new String[deniedPermissions.size()]));
+            mPermissionFragment.setShowToast(isShowToast);
+
+            // 3.要去申请权限
+            mPermissionFragment.requestPermissions(permissionListener,
+                    deniedPermissions.toArray(new String[deniedPermissions.size()]));
         } else {
             // 执行成功的方法
             mPermissionFragment.onSucceed(permissionListener);
