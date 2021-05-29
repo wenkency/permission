@@ -1,12 +1,10 @@
 package cn.carhouse.permission.callback;
 
-import java.io.Serializable;
-
 /**
  * 申请权限成功的回调
  */
 
-public interface PermissionListener{
+public interface PermissionListener {
     /**
      * 成功
      */

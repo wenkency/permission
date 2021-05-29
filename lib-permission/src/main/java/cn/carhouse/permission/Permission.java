@@ -21,6 +21,56 @@ public class Permission {
     public static final String[] SENSORS;    // 传感器。
     public static final String[] SMS;        // 读写短信、收发短信。
     public static final String[] STORAGE;    // 读写存储卡。
+    public static final String[] STORAGE_11;    // 读写存储卡。
+
+    /**
+     * 是否是 Android 11 及以上版本
+     */
+    static boolean isAndroid11() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.R;
+    }
+
+    /**
+     * 是否是 Android 10 及以上版本
+     */
+    static boolean isAndroid10() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q;
+    }
+
+    /**
+     * 是否是 Android 9.0 及以上版本
+     */
+    static boolean isAndroid9() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.P;
+    }
+
+    /**
+     * 是否是 Android 8.0 及以上版本
+     */
+    static boolean isAndroid8() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O;
+    }
+
+    /**
+     * 是否是 Android 7.0 及以上版本
+     */
+    static boolean isAndroid7() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.N;
+    }
+
+    /**
+     * 是否是 Android 6.0 及以上版本
+     */
+    static boolean isAndroid6() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M;
+    }
+
+    public static String[] getStorage() {
+        if (isAndroid11()) {
+            return STORAGE_11;
+        }
+        return STORAGE;
+    }
 
     static {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
@@ -33,6 +83,8 @@ public class Permission {
             SENSORS = new String[]{};
             SMS = new String[]{};
             STORAGE = new String[]{};
+            STORAGE_11 = new String[]{};
+
         } else {
 
 
@@ -42,6 +94,8 @@ public class Permission {
             STORAGE = new String[]{
                     Manifest.permission.READ_EXTERNAL_STORAGE,
                     Manifest.permission.WRITE_EXTERNAL_STORAGE};
+
+            STORAGE_11 = new String[]{Manifest.permission.MANAGE_EXTERNAL_STORAGE};
 
             CALENDAR = new String[]{
                     Manifest.permission.READ_CALENDAR,
@@ -85,6 +139,10 @@ public class Permission {
         if (ps.contains(permission)) {
             return "使用存储卡";
         }
+        ps = Arrays.asList(STORAGE_11);
+        if (ps.contains(permission)) {
+            return "使用存储卡";
+        }
         ps = Arrays.asList(CAMERA);
         if (ps.contains(permission)) {
             return "使用相机";
@@ -120,4 +178,6 @@ public class Permission {
         }
         return null;
     }
+
+
 }
